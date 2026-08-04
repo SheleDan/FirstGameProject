@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,6 +17,8 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private int attackDamage = 25;
     [SerializeField] private float attackCooldown = 0.4f;
     [SerializeField] private LayerMask targetLauers;
+    [SerializeField] private GameObject attackVisual;
+    [SerializeField] private float attackVisualDurations = 0.12f;
 
     private Player _player;
     private Health _ownHealth;
@@ -25,6 +28,11 @@ public class PlayerCombat : MonoBehaviour
     {
         _player = GetComponent<Player>();
         _ownHealth = _player.GetComponent<Health>();
+
+        if (!attackVisual)
+        {
+            attackVisual.SetActive(false);
+        }
     }
 
     private void OnEnable()
@@ -53,8 +61,14 @@ public class PlayerCombat : MonoBehaviour
         {
             return;
         }
-
+        
+        Vector2 direction = _player.FacingDirection;
+        
         attackPoint.localPosition = _player.FacingDirection * attackDistance;
+        
+        float andle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
+
+        attackPoint.localRotation = Quaternion.Euler(0f, 0f, andle);
     }
 
     private void Attack()
@@ -65,6 +79,12 @@ public class PlayerCombat : MonoBehaviour
         }
 
         _nextAttackTime = Time.time + attackCooldown;
+
+        if (attackVisual)
+        {
+            StopAllCoroutines();
+            StartCoroutine(ShowAttackVisual());
+        }
 
         Collider2D[] hits = Physics2D.OverlapCircleAll(
             attackPoint.position,
@@ -97,5 +117,14 @@ public class PlayerCombat : MonoBehaviour
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(attackPoint.position, attackRadius);
+    }
+
+    private IEnumerator ShowAttackVisual()
+    {
+        attackVisual.SetActive(true);
+
+        yield return new WaitForSeconds(attackVisualDurations);
+        
+        attackVisual.SetActive(false);
     }
 }
