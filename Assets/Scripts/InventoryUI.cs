@@ -50,7 +50,7 @@ public class InventoryUI : MonoBehaviour
 
     public void Show(Inventory inventory, string ownerName = "Сундук")
     {
-        if (inventory == null)
+        if (!inventory)
         {
             return;
         }
@@ -67,7 +67,7 @@ public class InventoryUI : MonoBehaviour
 
     public void Hide()
     {
-        if (_panel == null)
+        if (!_panel)
         {
             return;
         }
@@ -78,7 +78,7 @@ public class InventoryUI : MonoBehaviour
 
     public void SetInteractionAvailable(bool isAvailable)
     {
-        if (_hint != null)
+        if (_hint)
         {
             _hint.gameObject.SetActive(isAvailable && !IsOpen);
         }
