@@ -4,18 +4,30 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(Rigidbody2D))]
 public class Player : MonoBehaviour
 {
+    private static readonly int MoveXHash = Animator.StringToHash("MoveX");
+    private static readonly int MoveYHash = Animator.StringToHash("MoveY");
+    private static readonly int SpeedHash = Animator.StringToHash("Speed");
+
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private InputActionReference moveAction;
     
     private Rigidbody2D _playerRigidBody;
+    private Animator _animator;
+    private SpriteRenderer _spriteRenderer;
     private Vector2 _moveInput;
     
-    public Vector2 FacingDirection { get; private set; } = Vector2.zero;
+    public Vector2 FacingDirection { get; private set; } = Vector2.down;
 
     private void Awake()
     {
         _playerRigidBody = GetComponent<Rigidbody2D>();
+        _animator = GetComponentInChildren<Animator>();
+
+        if (_animator != null)
+        {
+            _spriteRenderer = _animator.GetComponent<SpriteRenderer>();
+        }
     }
 
     private void OnEnable()
@@ -37,6 +49,8 @@ public class Player : MonoBehaviour
         {
             FacingDirection = GetFourDirection(_moveInput);
         }
+
+        UpdateAnimation();
     }
 
     private void FixedUpdate()
@@ -53,5 +67,22 @@ public class Player : MonoBehaviour
         }
         
         return direction.y > 0 ? Vector2.up : Vector2.down;
+    }
+
+    private void UpdateAnimation()
+    {
+        if (!_animator)
+        {
+            return;
+        }
+
+        _animator.SetFloat(MoveXHash, FacingDirection.x);
+        _animator.SetFloat(MoveYHash, FacingDirection.y);
+        _animator.SetFloat(SpeedHash, _moveInput.sqrMagnitude);
+
+        if (_spriteRenderer&& Mathf.Abs(FacingDirection.x) > 0.01f)
+        {
+            _spriteRenderer.flipX = FacingDirection.x < 0f;
+        }
     }
 }
