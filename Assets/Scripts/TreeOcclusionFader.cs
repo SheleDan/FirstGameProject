@@ -28,7 +28,7 @@ public class TreeOcclusionFader : MonoBehaviour
 
     private void Update()
     {
-        if (targetRenderer == null)
+        if (!targetRenderer)
         {
             return;
         }
@@ -67,9 +67,14 @@ public class TreeOcclusionFader : MonoBehaviour
 
     private static bool IsPlayer(Collider2D other)
     {
+        if (other.isTrigger)
+        {
+            return false;
+        }
+        
         Rigidbody2D attachedBody = other.attachedRigidbody;
 
-        return attachedBody != null && attachedBody.CompareTag("Player");
+        return attachedBody && attachedBody.CompareTag("Player");
     }
 
     private void OnDisable()
