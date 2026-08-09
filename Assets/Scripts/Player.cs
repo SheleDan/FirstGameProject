@@ -1,3 +1,4 @@
+using Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -11,16 +12,15 @@ public class Player : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private InputActionReference moveAction;
+    [SerializeField] private InputActionReference interactAction;
 
     [Header("Interaction")]
-    [SerializeField, Min(0.1f)] private float interactionDistance = 1.5f;
-    [SerializeField] private LayerMask interactionLayers = ~0;
+    [SerializeField] private InteractionDetector interactionDetector;
     
     private Rigidbody2D _playerRigidBody;
     private Animator _animator;
     private SpriteRenderer _spriteRenderer;
     private Vector2 _moveInput;
-    private InputAction _interactAction;
     
     public Vector2 FacingDirection { get; private set; } = Vector2.down;
 
@@ -33,47 +33,45 @@ public class Player : MonoBehaviour
         {
             _spriteRenderer = _animator.GetComponent<SpriteRenderer>();
         }
-
-        _interactAction = new InputAction("Interact", InputActionType.Button);
-        _interactAction.AddBinding("<Keyboard>/e");
-        _interactAction.AddBinding("<Gamepad>/buttonNorth");
     }
 
     private void OnEnable()
     {
         moveAction.action.Enable();
-        _interactAction.Enable();
+        interactAction.action.Enable();
     }
 
     private void OnDisable()
     {
         moveAction.action.Disable();
-        _interactAction.Disable();
+        interactAction.action.Disable();
     }
 
     private void Update()
     {
-        Inventory nearbyInventory = FindNearbyInventory();
+        IInteractable nearbyInteractable = interactionDetector.GetClosestInteractable(transform.position);
         InventoryUI inventoryUI = InventoryUI.Instance;
 
-        if (inventoryUI != null)
+        if (inventoryUI)
         {
-            inventoryUI.SetInteractionAvailable(nearbyInventory != null);
+            inventoryUI.SetInteractionAvailable(
+                nearbyInteractable != null,
+                nearbyInteractable?.InteractionHint);
 
-            if (_interactAction.WasPressedThisFrame())
+            if (interactAction.action.WasPressedThisFrame())
             {
                 if (inventoryUI.IsOpen)
                 {
                     inventoryUI.Hide();
                 }
-                else if (nearbyInventory != null)
+                else
                 {
-                    inventoryUI.Show(nearbyInventory);
+                    nearbyInteractable?.Interact(this);
                 }
             }
         }
 
-        _moveInput = inventoryUI != null && inventoryUI.IsOpen
+        _moveInput = inventoryUI && inventoryUI.IsOpen
             ? Vector2.zero
             : moveAction.action.ReadValue<Vector2>();
         _moveInput = Vector2.ClampMagnitude(_moveInput, 1f);
@@ -89,43 +87,6 @@ public class Player : MonoBehaviour
     private void FixedUpdate()
     {
         _playerRigidBody.linearVelocity = _moveInput * moveSpeed;
-    }
-
-    private void OnDestroy()
-    {
-        _interactAction?.Dispose();
-    }
-
-    private Inventory FindNearbyInventory()
-    {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(
-            transform.position,
-            interactionDistance,
-            interactionLayers);
-
-        Inventory closestInventory = null;
-        float closestDistance = float.MaxValue;
-
-        foreach (Collider2D hit in hits)
-        {
-            Inventory inventory = hit.GetComponentInParent<Inventory>();
-            if (inventory == null)
-            {
-                continue;
-            }
-
-            float distance = ((Vector2)inventory.transform.position -
-                              (Vector2)transform.position).sqrMagnitude;
-            if (distance >= closestDistance)
-            {
-                continue;
-            }
-
-            closestInventory = inventory;
-            closestDistance = distance;
-        }
-
-        return closestInventory;
     }
 
     // Фиксирует направление взгляда в одной из четырех сторон.

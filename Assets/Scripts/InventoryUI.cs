@@ -76,12 +76,21 @@ public class InventoryUI : MonoBehaviour
         UnsubscribeFromCurrentInventory();
     }
 
-    public void SetInteractionAvailable(bool isAvailable)
+    public void SetInteractionAvailable(
+        bool isAvailable,
+        string interactionHint = null)
     {
-        if (_hint)
+        if (!_hint)
         {
-            _hint.gameObject.SetActive(isAvailable && !IsOpen);
+            return;
         }
+
+        if (isAvailable && !string.IsNullOrEmpty(interactionHint))
+        {
+            _hint.text = interactionHint;
+        }
+        
+        _hint.gameObject.SetActive(isAvailable && !IsOpen);
     }
 
     private void BuildInterface()
