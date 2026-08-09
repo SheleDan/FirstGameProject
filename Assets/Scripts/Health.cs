@@ -13,7 +13,7 @@ public class Health : MonoBehaviour
     public int CurrentHealth { get; private set; }
     public int MaxHealth => maxHealth;
     public bool IsDead { get; private set; }
-    
+
     private  void Awake()
     {
         CurrentHealth = maxHealth;

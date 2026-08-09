@@ -17,7 +17,7 @@ public class Enemy : MonoBehaviour
 
         if (!target)
         {
-            Player player = FindFirstObjectByType<Player>();
+            Player player = FindAnyObjectByType<Player>();
             if (player)
             {
                 target = player.transform;
