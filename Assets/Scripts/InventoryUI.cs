@@ -10,7 +10,6 @@ public class InventoryUI : MonoBehaviour
     private GameObject _panel;
     private RectTransform _content;
     private Text _title;
-    private Text _hint;
     private Inventory _currentInventory;
     private Font _font;
 
@@ -61,7 +60,6 @@ public class InventoryUI : MonoBehaviour
 
         _title.text = string.IsNullOrWhiteSpace(ownerName) ? "Сундук" : ownerName;
         _panel.SetActive(true);
-        _hint.gameObject.SetActive(false);
         RebuildSlots();
     }
 
@@ -74,23 +72,6 @@ public class InventoryUI : MonoBehaviour
 
         _panel.SetActive(false);
         UnsubscribeFromCurrentInventory();
-    }
-
-    public void SetInteractionAvailable(
-        bool isAvailable,
-        string interactionHint = null)
-    {
-        if (!_hint)
-        {
-            return;
-        }
-
-        if (isAvailable && !string.IsNullOrEmpty(interactionHint))
-        {
-            _hint.text = interactionHint;
-        }
-        
-        _hint.gameObject.SetActive(isAvailable && !IsOpen);
     }
 
     private void BuildInterface()
@@ -137,18 +118,7 @@ public class InventoryUI : MonoBehaviour
         layout.childForceExpandHeight = false;
         layout.childForceExpandWidth = true;
 
-        _hint = CreateText("Interaction Hint", transform, 27, TextAnchor.MiddleCenter);
-        _hint.text = "Нажмите E, чтобы открыть сундук";
-        _hint.color = Color.white;
-        SetRect(_hint.rectTransform, new Vector2(-360f, 70f), new Vector2(360f, 130f),
-            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
-
-        Outline hintOutline = _hint.gameObject.AddComponent<Outline>();
-        hintOutline.effectColor = Color.black;
-        hintOutline.effectDistance = new Vector2(2f, -2f);
-
         _panel.SetActive(false);
-        _hint.gameObject.SetActive(false);
     }
 
     private void RebuildSlots()
@@ -158,7 +128,7 @@ public class InventoryUI : MonoBehaviour
             Destroy(_content.GetChild(i).gameObject);
         }
 
-        if (_currentInventory == null || _currentInventory.Slots.Count == 0)
+        if (!_currentInventory || _currentInventory.Slots.Count == 0)
         {
             CreateSlotText("Сундук пуст");
             return;

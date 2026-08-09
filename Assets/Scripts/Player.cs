@@ -51,23 +51,26 @@ public class Player : MonoBehaviour
     {
         IInteractable nearbyInteractable = interactionDetector.GetClosestInteractable(transform.position);
         InventoryUI inventoryUI = InventoryUI.Instance;
+        InteractionUI interactionUI = InteractionUI.Instance;
 
-        if (inventoryUI)
+        bool inventoryIsOpen = inventoryUI && inventoryUI.IsOpen;
+
+        if (interactionUI)
         {
-            inventoryUI.SetInteractionAvailable(
-                nearbyInteractable != null,
+            interactionUI.SetInteractionAvailable(
+                nearbyInteractable != null && !inventoryIsOpen,
                 nearbyInteractable?.InteractionHint);
-
-            if (interactAction.action.WasPressedThisFrame())
+        }
+        
+        if (interactAction.action.WasPressedThisFrame())
+        {
+            if (inventoryUI && inventoryUI.IsOpen)
             {
-                if (inventoryUI.IsOpen)
-                {
-                    inventoryUI.Hide();
-                }
-                else
-                {
-                    nearbyInteractable?.Interact(this);
-                }
+                inventoryUI.Hide();
+            }
+            else
+            {
+                nearbyInteractable?.Interact(this);
             }
         }
 
