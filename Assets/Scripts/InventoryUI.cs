@@ -29,13 +29,14 @@ public class InventoryUI : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (Instance&& Instance != this)
         {
             Destroy(gameObject);
             return;
         }
 
         Instance = this;
+        DontDestroyOnLoad(gameObject);
         BuildInterface();
     }
 
@@ -207,7 +208,7 @@ public class InventoryUI : MonoBehaviour
 
     private void UnsubscribeFromCurrentInventory()
     {
-        if (_currentInventory != null)
+        if (_currentInventory)
         {
             _currentInventory.Changed -= RebuildSlots;
             _currentInventory = null;

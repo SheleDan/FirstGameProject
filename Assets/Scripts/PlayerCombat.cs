@@ -29,7 +29,7 @@ public class PlayerCombat : MonoBehaviour
         _player = GetComponent<Player>();
         _ownHealth = _player.GetComponent<Health>();
 
-        if (!attackVisual)
+        if (attackVisual)
         {
             attackVisual.SetActive(false);
         }

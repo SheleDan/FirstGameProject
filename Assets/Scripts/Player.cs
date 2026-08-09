@@ -119,4 +119,22 @@ public class Player : MonoBehaviour
             _spriteRenderer.flipX = FacingDirection.x < 0f;
         }
     }
+
+    public void HandleDeath()
+    {
+        _moveInput = Vector2.zero;
+        _playerRigidBody.linearVelocity = Vector2.zero;
+        
+        UpdateAnimation();
+        
+        PlayerCombat playerCombat = GetComponent<PlayerCombat>();
+        if (playerCombat)
+        {
+            playerCombat.enabled = false;
+        }
+        
+        enabled = false;
+
+        Debug.Log("Игрок погиб.");
+    }
 }
