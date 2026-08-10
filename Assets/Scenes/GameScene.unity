@@ -7192,7 +7192,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
   capacity: 12
-  slots: []
+  slots:
+  - item: {fileID: 11400000, guid: 6cc97f925ba5ff6419aa03f1c0e6c634, type: 2}
+    amount: 0
   onInventoryChanged:
     m_PersistentCalls:
       m_Calls: []
