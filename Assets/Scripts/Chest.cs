@@ -24,7 +24,17 @@ public class Chest : MonoBehaviour, IInteractable
         {
             return;
         }
+
+        Inventory playerInventory = player.GetComponentInChildren<Inventory>();
+        if (!playerInventory)
+        {
+            Debug.LogWarning("У игрока не найден Inventory.");
+            return;
+        }
         
-        inventoryUI.Show(_inventory, displayName);
+        inventoryUI.Show(
+            _inventory,
+            playerInventory,
+            displayName);
     }
 }

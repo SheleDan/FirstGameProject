@@ -12,6 +12,7 @@ public class InventoryUI : MonoBehaviour
     private Text _title;
     private Inventory _currentInventory;
     private Font _font;
+    private Inventory _receiverInventory;
 
     public static InventoryUI Instance { get; private set; }
     public bool IsOpen => _panel != null && _panel.activeSelf;
@@ -48,15 +49,21 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    public void Show(Inventory inventory, string ownerName = "Сундук")
+    public void Show(
+        Inventory sourceInventory,
+        Inventory receiverInventory,
+        string ownerName = "Сундук")
     {
-        if (!inventory)
+        if (sourceInventory == null || receiverInventory == null)
         {
             return;
         }
 
         UnsubscribeFromCurrentInventory();
-        _currentInventory = inventory;
+
+        _currentInventory = sourceInventory;
+        _receiverInventory = receiverInventory;
+
         _currentInventory.Changed += RebuildSlots;
 
         _title.text = string.IsNullOrWhiteSpace(ownerName) ? "Сундук" : ownerName;
@@ -137,7 +144,7 @@ public class InventoryUI : MonoBehaviour
 
         foreach (Inventory.InventorySlot slot in _currentInventory.Slots)
         {
-            CreateSlotText($"{slot.ItemId}   x{slot.Amount}");
+            CreateItemSlot(slot);
         }
     }
 
@@ -211,8 +218,10 @@ public class InventoryUI : MonoBehaviour
         if (_currentInventory)
         {
             _currentInventory.Changed -= RebuildSlots;
-            _currentInventory = null;
         }
+
+        _currentInventory = null;
+        _receiverInventory = null;
     }
 
     private void OnDestroy()
@@ -222,6 +231,60 @@ public class InventoryUI : MonoBehaviour
         if (Instance == this)
         {
             Instance = null;
+        }
+    }
+
+    private void CreateItemSlot(Inventory.InventorySlot slot)
+    {
+        if (slot.Item == null)
+        {
+            return;
+        }
+
+        GameObject slotObject = CreateUiObject("Slot", _content);
+
+        Image background = slotObject.AddComponent<Image>();
+        background.color = SlotColor;
+
+        LayoutElement layoutElement = slotObject.AddComponent<LayoutElement>();
+
+        layoutElement.preferredHeight = 62f;
+        layoutElement.minHeight = 62f;
+
+        ItemData item = slot.Item;
+
+        Text text = CreateText(
+            "Label",
+            slotObject.transform,
+            28,
+            TextAnchor.MiddleLeft);
+        text.text = $"{item.ItemName}   x{slot.Amount}";
+
+        SetRect(
+            text.rectTransform,
+            new Vector2(18f, 0f),
+            new Vector2(-18f, 0f),
+            Vector2.zero,
+            Vector2.one);
+        
+        Button button = slotObject.AddComponent<Button>();
+        button.targetGraphic = background;
+        button.onClick.AddListener(() => TakeItem(item));
+    }
+
+    private void TakeItem(ItemData item)
+    {
+        if (_currentInventory == null || _receiverInventory == null)
+        {
+            return;
+        }
+
+        bool transferred = _currentInventory.TransferItemTo(
+            _receiverInventory, item);
+
+        if (!transferred)
+        {
+            Debug.Log("Не удалось взять предмет. Возможно, рюкзак заполнен.");
         }
     }
 }

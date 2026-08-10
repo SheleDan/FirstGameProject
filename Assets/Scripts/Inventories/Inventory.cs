@@ -8,15 +8,15 @@ public class Inventory : MonoBehaviour
     [Serializable]
     public class InventorySlot
     {
-        [SerializeField] private string itemId;
+        [SerializeField] private ItemData item;
         [SerializeField, Min(1)] private int amount = 1;
 
-        public string ItemId => itemId;
+        public ItemData Item => item;
         public int Amount => amount;
 
-        public InventorySlot(string itemId, int amount)
+        public InventorySlot(ItemData item, int amount)
         {
-            this.itemId = itemId;
+            this.item = item;
             this.amount = amount;
         }
 
@@ -42,14 +42,14 @@ public class Inventory : MonoBehaviour
     /// Adds items to an existing stack or occupies a new slot.
     /// Returns false when the id is invalid or there are no free slots.
     /// </summary>
-    public bool AddItem(string itemId, int amount = 1)
+    public bool AddItem(ItemData item, int amount = 1)
     {
-        if (string.IsNullOrWhiteSpace(itemId) || amount <= 0)
+        if (item == null || amount <= 0)
         {
             return false;
         }
 
-        InventorySlot slot = FindSlot(itemId);
+        InventorySlot slot = FindSlot(item);
         if (slot != null)
         {
             slot.Add(amount);
@@ -62,7 +62,7 @@ public class Inventory : MonoBehaviour
             return false;
         }
 
-        slots.Add(new InventorySlot(itemId, amount));
+        slots.Add(new InventorySlot(item, amount));
         NotifyChanged();
         return true;
     }
@@ -70,14 +70,14 @@ public class Inventory : MonoBehaviour
     /// <summary>
     /// Removes the requested amount. The slot disappears when its stack is empty.
     /// </summary>
-    public bool RemoveItem(string itemId, int amount = 1)
+    public bool RemoveItem(ItemData item, int amount = 1)
     {
-        if (string.IsNullOrWhiteSpace(itemId) || amount <= 0)
+        if (item == null || amount <= 0)
         {
             return false;
         }
 
-        InventorySlot slot = FindSlot(itemId);
+        InventorySlot slot = FindSlot(item);
         if (slot == null || slot.Amount < amount)
         {
             return false;
@@ -93,20 +93,20 @@ public class Inventory : MonoBehaviour
         return true;
     }
 
-    public bool HasItem(string itemId, int amount = 1)
+    public bool HasItem(ItemData item, int amount = 1)
     {
-        if (string.IsNullOrWhiteSpace(itemId) || amount <= 0)
+        if (item == null || amount <= 0)
         {
             return false;
         }
 
-        InventorySlot slot = FindSlot(itemId);
+        InventorySlot slot = FindSlot(item);
         return slot != null && slot.Amount >= amount;
     }
 
-    public int GetItemAmount(string itemId)
+    public int GetItemAmount(ItemData item)
     {
-        InventorySlot slot = FindSlot(itemId);
+        InventorySlot slot = FindSlot(item);
         return slot?.Amount ?? 0;
     }
 
@@ -121,10 +121,9 @@ public class Inventory : MonoBehaviour
         NotifyChanged();
     }
 
-    private InventorySlot FindSlot(string itemId)
+    private InventorySlot FindSlot(ItemData item)
     {
-        return slots.Find(slot =>
-            slot != null && string.Equals(slot.ItemId, itemId, StringComparison.Ordinal));
+        return slots.Find(slot => slot != null && slot.Item == item);
     }
 
     private void NotifyChanged()
@@ -136,5 +135,34 @@ public class Inventory : MonoBehaviour
     private void OnValidate()
     {
         capacity = Mathf.Max(1, capacity);
+    }
+
+    public bool TransferItemTo(
+        Inventory target,
+        ItemData item,
+        int amount = 1
+    )
+    {
+        if (target == null ||
+            target == this ||
+            item == null ||
+            amount <= 0 ||
+            !HasItem(item, amount))
+        {
+            return false;
+        }
+
+        if (!target.AddItem(item, amount))
+        {
+            return false;
+        }
+
+        if (RemoveItem(item, amount))
+        {
+            return true;
+        }
+
+        target.RemoveItem(item, amount);
+        return true;
     }
 }
