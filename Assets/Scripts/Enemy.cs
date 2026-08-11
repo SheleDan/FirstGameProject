@@ -27,7 +27,7 @@ public class Enemy : MonoBehaviour
 
         if (!target)
         {
-            Player player = FindAnyObjectByType<Player>();
+            Player.Player player = FindAnyObjectByType<Player.Player>();
             if (player)
             {
                 target = player.transform;

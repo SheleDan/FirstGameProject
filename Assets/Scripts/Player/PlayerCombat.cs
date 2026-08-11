@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Player))]
+[RequireComponent(typeof(Player.Player))]
 public class PlayerCombat : MonoBehaviour
 {
     [Header("Input")]
@@ -20,13 +20,13 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private GameObject attackVisual;
     [SerializeField] private float attackVisualDurations = 0.12f;
 
-    private Player _player;
+    private Player.Player _player;
     private Health _ownHealth;
     private float _nextAttackTime;
 
     private void Awake()
     {
-        _player = GetComponent<Player>();
+        _player = GetComponent<Player.Player>();
         _ownHealth = _player.GetComponent<Health>();
 
         if (attackVisual)

@@ -96,35 +96,109 @@ for (const letter of 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫ
 
 function makeGlyph(char, bitmap) {
   const p = new opentype.Path();
-  const cell = 100;
-  const inset = 5;
+  const isLower = char.toLowerCase() === char && char.toUpperCase() !== char;
+  const hasDescender = 'gjpqyруфцщ'.includes(char);
+  const cellX = isLower ? 82 : 96;
+  const cellY = isLower ? 76 : 96;
+  const usedColumns = [];
+  for (let x = 0; x < bitmap[0].length; x++) {
+    if (bitmap.some(row => row[x] === '1')) usedColumns.push(x);
+  }
+  const left = usedColumns.length ? usedColumns[0] : 0;
+  const right = usedColumns.length ? usedColumns[usedColumns.length - 1] : 3;
+  const baselineShift = hasDescender ? -2 * cellY : 0;
+  const filled = (x, y) => y >= 0 && y < bitmap.length &&
+    x >= 0 && x < bitmap[y].length && bitmap[y][x] === '1';
+  const edges = [];
+  const addEdge = (ax, ay, bx, by) => edges.push({ a: [ax, ay], b: [bx, by], used: false });
+
+  // Add only exposed cell edges. Stitching these edges below creates one
+  // continuous outline instead of stacked rectangles with visible seams.
   for (let y = 0; y < bitmap.length; y++) {
     for (let x = 0; x < bitmap[y].length; x++) {
-      if (bitmap[y][x] !== '1') continue;
-      const x0 = x * cell + inset;
-      const y0 = (bitmap.length - 1 - y) * cell + inset;
-      const x1 = (x + 1) * cell - inset;
-      const y1 = (bitmap.length - y) * cell - inset;
-      p.moveTo(x0, y0); p.lineTo(x1, y0); p.lineTo(x1, y1); p.lineTo(x0, y1); p.close();
+      if (!filled(x, y)) continue;
+      if (!filled(x, y + 1)) addEdge(x, y + 1, x + 1, y + 1); // bottom
+      if (!filled(x + 1, y)) addEdge(x + 1, y + 1, x + 1, y); // right
+      if (!filled(x, y - 1)) addEdge(x + 1, y, x, y);         // top
+      if (!filled(x - 1, y)) addEdge(x, y, x, y + 1);         // left
     }
+  }
+
+  const pointKey = v => `${v[0]},${v[1]}`;
+  const outgoing = new Map();
+  edges.forEach((edge, index) => {
+    const key = pointKey(edge.a);
+    if (!outgoing.has(key)) outgoing.set(key, []);
+    outgoing.get(key).push(index);
+  });
+
+  const seed = char.codePointAt(0);
+  const transform = ([gx, gy]) => {
+    const xWobble = (((gy * 17 + seed * 7) % 7) - 3) * 1.15;
+    const yWobble = (((gx * 11 + seed * 3) % 5) - 2) * 0.75;
+    return [
+      (gx - left) * cellX + xWobble,
+      (bitmap.length - gy) * cellY + baselineShift + yWobble
+    ];
+  };
+
+  for (let startIndex = 0; startIndex < edges.length; startIndex++) {
+    if (edges[startIndex].used) continue;
+    const loop = [];
+    let current = startIndex;
+    const startKey = pointKey(edges[current].a);
+    let guard = 0;
+    while (!edges[current].used && guard++ < edges.length + 2) {
+      const edge = edges[current];
+      edge.used = true;
+      loop.push(edge.a);
+      const nextKey = pointKey(edge.b);
+      if (nextKey === startKey) break;
+      const choices = (outgoing.get(nextKey) || []).filter(i => !edges[i].used);
+      if (!choices.length) break;
+      current = choices[0];
+    }
+    if (loop.length < 3) continue;
+
+    const points = loop.map(transform);
+    const radius = isLower ? 7 : 8;
+    const corner = (prev, v, next) => {
+      const toward = (from, to) => {
+        const dx = to[0] - from[0], dy = to[1] - from[1];
+        const len = Math.hypot(dx, dy) || 1;
+        return [from[0] + dx / len * radius, from[1] + dy / len * radius];
+      };
+      return { before: toward(v, prev), after: toward(v, next) };
+    };
+    const first = corner(points.at(-1), points[0], points[1]);
+    p.moveTo(first.after[0], first.after[1]);
+    for (let i = 1; i <= points.length; i++) {
+      const index = i % points.length;
+      const c = corner(points[(index - 1 + points.length) % points.length], points[index], points[(index + 1) % points.length]);
+      p.lineTo(c.before[0], c.before[1]);
+      p.quadTo(points[index][0], points[index][1], c.after[0], c.after[1]);
+    }
+    p.close();
   }
   return new opentype.Glyph({
     name: char === ' ' ? 'space' : `uni${char.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')}`,
-    unicode: char.codePointAt(0), advanceWidth: char === ' ' ? 400 : 600, path: p
+    unicode: char.codePointAt(0),
+    advanceWidth: char === ' ' ? 320 : (right - left + 1) * cellX + 78,
+    path: p
   });
 }
 
 const notdef = makeGlyph('\uFFFD', rows('11111','10001','10101','10101','10101','10001','11111'));
 const outputGlyphs = [notdef, ...Object.entries(glyphs).map(([c,b]) => makeGlyph(c,b))];
 const font = new opentype.Font({
-  familyName: 'Riftbound Pixel', styleName: 'Regular',
+  familyName: 'Riftbound Hand Pixel', styleName: 'Regular',
   designer: 'FirstGameProject', manufacturer: 'FirstGameProject',
-  description: 'Original pixel typeface for FirstGameProject.',
+  description: 'Original soft hand-drawn pixel typeface for FirstGameProject.',
   unitsPerEm: 1000, ascender: 800, descender: -200, glyphs: outputGlyphs
 });
 
 const outDir = path.resolve(__dirname, '../../Assets/Game/Art/FirstGameProject/Generated/Fonts');
 fs.mkdirSync(outDir, { recursive: true });
-const outFile = path.join(outDir, 'RiftboundPixel-Regular.ttf');
+const outFile = path.join(outDir, 'RiftboundHandPixel-Regular.ttf');
 fs.writeFileSync(outFile, Buffer.from(font.toArrayBuffer()));
 console.log(`${outFile}\nGlyphs: ${outputGlyphs.length}`);

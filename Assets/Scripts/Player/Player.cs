@@ -1,140 +1,155 @@
+using Dialogue;
 using Interfaces;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Rigidbody2D))]
-public class Player : MonoBehaviour
+namespace Player
 {
-    private static readonly int MoveXHash = Animator.StringToHash("MoveX");
-    private static readonly int MoveYHash = Animator.StringToHash("MoveY");
-    private static readonly int SpeedHash = Animator.StringToHash("Speed");
+    [RequireComponent(typeof(Rigidbody2D))]
+    public class Player : MonoBehaviour
+    {
+        private static readonly int MoveXHash = Animator.StringToHash("MoveX");
+        private static readonly int MoveYHash = Animator.StringToHash("MoveY");
+        private static readonly int SpeedHash = Animator.StringToHash("Speed");
 
-    [Header("Movement")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private InputActionReference moveAction;
-    [SerializeField] private InputActionReference interactAction;
+        [Header("Movement")]
+        [SerializeField] private float moveSpeed = 5f;
+        [SerializeField] private InputActionReference moveAction;
+        [SerializeField] private InputActionReference interactAction;
 
-    [Header("Interaction")]
-    [SerializeField] private InteractionDetector interactionDetector;
+        [Header("Interaction")]
+        [SerializeField] private InteractionDetector interactionDetector;
     
-    private Rigidbody2D _playerRigidBody;
-    private Animator _animator;
-    private SpriteRenderer _spriteRenderer;
-    private Vector2 _moveInput;
+        private Rigidbody2D _playerRigidBody;
+        private Animator _animator;
+        private SpriteRenderer _spriteRenderer;
+        private Vector2 _moveInput;
     
-    public Vector2 FacingDirection { get; private set; } = Vector2.down;
+        public Vector2 FacingDirection { get; private set; } = Vector2.down;
 
-    private void Awake()
-    {
-        _playerRigidBody = GetComponent<Rigidbody2D>();
-        _animator = GetComponentInChildren<Animator>();
-
-        if (_animator != null)
+        private void Awake()
         {
-            _spriteRenderer = _animator.GetComponent<SpriteRenderer>();
-        }
-    }
+            _playerRigidBody = GetComponent<Rigidbody2D>();
+            _animator = GetComponentInChildren<Animator>();
 
-    private void OnEnable()
-    {
-        moveAction.action.Enable();
-        interactAction.action.Enable();
-    }
-
-    private void OnDisable()
-    {
-        moveAction.action.Disable();
-        interactAction.action.Disable();
-    }
-
-    private void Update()
-    {
-        IInteractable nearbyInteractable = interactionDetector.GetClosestInteractable(transform.position);
-        InventoryUI inventoryUI = InventoryUI.Instance;
-        InteractionUI interactionUI = InteractionUI.Instance;
-
-        bool inventoryIsOpen = inventoryUI && inventoryUI.IsOpen;
-
-        if (interactionUI)
-        {
-            interactionUI.SetInteractionAvailable(
-                nearbyInteractable != null && !inventoryIsOpen,
-                nearbyInteractable?.InteractionHint);
-        }
-        
-        if (interactAction.action.WasPressedThisFrame())
-        {
-            if (inventoryUI && inventoryUI.IsOpen)
+            if (_animator != null)
             {
-                inventoryUI.Hide();
-            }
-            else
-            {
-                nearbyInteractable?.Interact(this);
+                _spriteRenderer = _animator.GetComponent<SpriteRenderer>();
             }
         }
 
-        _moveInput = inventoryUI && inventoryUI.IsOpen
-            ? Vector2.zero
-            : moveAction.action.ReadValue<Vector2>();
-        _moveInput = Vector2.ClampMagnitude(_moveInput, 1f);
-        
-        if (_moveInput.sqrMagnitude > 0.01f)
+        private void OnEnable()
         {
-            FacingDirection = GetFourDirection(_moveInput);
+            moveAction.action.Enable();
+            interactAction.action.Enable();
         }
 
-        UpdateAnimation();
-    }
-
-    private void FixedUpdate()
-    {
-        _playerRigidBody.linearVelocity = _moveInput * moveSpeed;
-    }
-
-    // Фиксирует направление взгляда в одной из четырех сторон.
-    private Vector2 GetFourDirection(Vector2 direction)
-    {
-        if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+        private void OnDisable()
         {
-            return direction.x > 0 ? Vector2.right : Vector2.left;
-        }
-        
-        return direction.y > 0 ? Vector2.up : Vector2.down;
-    }
-
-    private void UpdateAnimation()
-    {
-        if (!_animator)
-        {
-            return;
+            moveAction.action.Disable();
+            interactAction.action.Disable();
         }
 
-        _animator.SetFloat(MoveXHash, FacingDirection.x);
-        _animator.SetFloat(MoveYHash, FacingDirection.y);
-        _animator.SetFloat(SpeedHash, _moveInput.sqrMagnitude);
-
-        if (_spriteRenderer&& Mathf.Abs(FacingDirection.x) > 0.01f)
+        private void Update()
         {
-            _spriteRenderer.flipX = FacingDirection.x < 0f;
-        }
-    }
+            IInteractable nearbyInteractable = interactionDetector.GetClosestInteractable(transform.position);
+            InventoryUI inventoryUI = InventoryUI.Instance;
+            InteractionUI interactionUI = InteractionUI.Instance;
+            DialogueUI dialogueUI = DialogueUI.Instance;
 
-    public void HandleDeath()
-    {
-        _moveInput = Vector2.zero;
-        _playerRigidBody.linearVelocity = Vector2.zero;
+            bool inventoryIsOpen = inventoryUI && inventoryUI.IsOpen;
+            bool dialogueIsOpen = dialogueUI && dialogueUI.IsOpen;
+
+            // Показываем подсказку взаимодействия только тогда, когда не открыт инвентарь или диалог.
+            if (interactionUI)
+            {
+                interactionUI.SetInteractionAvailable(
+                    nearbyInteractable != null
+                    && !inventoryIsOpen
+                    && !dialogueIsOpen,
+                    nearbyInteractable?.InteractionHint);
+            }
         
-        UpdateAnimation();
+            // Обрабатываем нажатие на E.
+            if (interactAction.action.WasPressedThisFrame())
+            {
+                if (dialogueIsOpen)
+                {
+                    dialogueUI.ShowNextLine();
+                }
+                else if (inventoryIsOpen)
+                {
+                    inventoryUI.Hide();
+                }
+                else
+                {
+                    nearbyInteractable?.Interact(this);
+                }
+            }
+
+            _moveInput = inventoryIsOpen || dialogueIsOpen
+                ? Vector2.zero
+                : moveAction.action.ReadValue<Vector2>();
         
-        PlayerCombat playerCombat = GetComponent<PlayerCombat>();
-        if (playerCombat)
+            _moveInput = Vector2.ClampMagnitude(_moveInput, 1f);
+        
+            if (_moveInput.sqrMagnitude > 0.01f)
+            {
+                FacingDirection = GetFourDirection(_moveInput);
+            }
+
+            UpdateAnimation();
+        }
+
+        private void FixedUpdate()
         {
-            playerCombat.enabled = false;
+            _playerRigidBody.linearVelocity = _moveInput * moveSpeed;
         }
-        
-        enabled = false;
 
-        Debug.Log("Игрок погиб.");
+        // Фиксирует направление взгляда в одной из четырех сторон.
+        private Vector2 GetFourDirection(Vector2 direction)
+        {
+            if (Mathf.Abs(direction.x) > Mathf.Abs(direction.y))
+            {
+                return direction.x > 0 ? Vector2.right : Vector2.left;
+            }
+        
+            return direction.y > 0 ? Vector2.up : Vector2.down;
+        }
+
+        private void UpdateAnimation()
+        {
+            if (!_animator)
+            {
+                return;
+            }
+
+            _animator.SetFloat(MoveXHash, FacingDirection.x);
+            _animator.SetFloat(MoveYHash, FacingDirection.y);
+            _animator.SetFloat(SpeedHash, _moveInput.sqrMagnitude);
+
+            if (_spriteRenderer&& Mathf.Abs(FacingDirection.x) > 0.01f)
+            {
+                _spriteRenderer.flipX = FacingDirection.x < 0f;
+            }
+        }
+
+        public void HandleDeath()
+        {
+            _moveInput = Vector2.zero;
+            _playerRigidBody.linearVelocity = Vector2.zero;
+        
+            UpdateAnimation();
+        
+            PlayerCombat playerCombat = GetComponent<PlayerCombat>();
+            if (playerCombat)
+            {
+                playerCombat.enabled = false;
+            }
+        
+            enabled = false;
+
+            Debug.Log("Игрок погиб.");
+        }
     }
 }

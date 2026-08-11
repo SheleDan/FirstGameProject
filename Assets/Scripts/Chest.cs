@@ -17,7 +17,7 @@ public class Chest : MonoBehaviour, IInteractable
         _inventory = GetComponent<Inventory>();
     }
 
-    public void Interact(Player player)
+    public void Interact(Player.Player player)
     {
         InventoryUI inventoryUI = InventoryUI.Instance;
         if (!inventoryUI)

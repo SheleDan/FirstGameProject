@@ -4,6 +4,6 @@ namespace Interfaces
     {
         string InteractionHint { get; }
     
-        void Interact(Player player);
+        void Interact(Player.Player player);
     } 
 }
