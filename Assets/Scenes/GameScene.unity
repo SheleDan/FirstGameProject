@@ -9347,8 +9347,6 @@ GameObject:
   - component: {fileID: 2075289012}
   - component: {fileID: 2075289016}
   - component: {fileID: 2075289015}
-  - component: {fileID: 2075289014}
-  - component: {fileID: 2075289013}
   m_Layer: 0
   m_Name: VillageElder
   m_TagString: Untagged
@@ -9372,34 +9370,6 @@ Transform:
   - {fileID: 349473469}
   m_Father: {fileID: 2035147690}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2075289013
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2075289011}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f3453227135c4448b234f1562fc76c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::YSorter
-  sortPoint: {fileID: 0}
-  orderOffset: 0
-  precision: 100
---- !u!210 &2075289014
-SortingGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2075289011}
-  m_Enabled: 1
-  m_SortingLayerID: -1122473329
-  m_SortingLayer: 2
-  m_SortingOrder: 175
-  m_SortAtRoot: 0
-  m_Sort3DAs2D: 0
 --- !u!114 &2075289015
 MonoBehaviour:
   m_ObjectHideFlags: 0
