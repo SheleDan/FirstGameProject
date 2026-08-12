@@ -6037,7 +6037,6 @@ GameObject:
   - component: {fileID: 804799710}
   - component: {fileID: 804799712}
   - component: {fileID: 804799713}
-  - component: {fileID: 804799714}
   - component: {fileID: 804799715}
   m_Layer: 0
   m_Name: Player
@@ -6211,19 +6210,6 @@ MonoBehaviour:
     m_Bits: 4294967295
   attackVisual: {fileID: 197675605}
   attackVisualDurations: 0.12
---- !u!210 &804799714
-SortingGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 804799706}
-  m_Enabled: 1
-  m_SortingLayerID: -1122473329
-  m_SortingLayer: 2
-  m_SortingOrder: 0
-  m_SortAtRoot: 0
-  m_Sort3DAs2D: 0
 --- !u!114 &804799715
 MonoBehaviour:
   m_ObjectHideFlags: 0
